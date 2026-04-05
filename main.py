@@ -228,7 +228,30 @@ def create_fallback_icon():
 def main():
     app = QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(False)
+
+    # Hide Dock icon on macOS
+    if platform.system() == "Darwin":
+        try:
+            import ctypes
+            import ctypes.util
+            # Load AppKit to access NSApplication
+            app_kit = ctypes.cdll.LoadLibrary(ctypes.util.find_library('AppKit'))
+            objc = ctypes.cdll.LoadLibrary(ctypes.util.find_library('objc'))
+
+            # Get shared NSApplication instance
+            ns_app_cls = objc.objc_getClass(b'NSApplication')
+            shared_app_sel = objc.sel_registerName(b'sharedApplication')
+            ns_app = objc.objc_msgSend(ns_app_cls, shared_app_sel)
+
+            # Set activation policy to NSApplicationActivationPolicyAccessory (1)
+            # This hides the dock icon but keeps the menu bar icon
+            set_policy_sel = objc.sel_registerName(b'setActivationPolicy:')
+            objc.objc_msgSend(ns_app, set_policy_sel, 1)
+        except Exception as e:
+            print(f"Failed to hide dock icon: {e}")
+
     icon_path = "icon.png"
+
     icon = QIcon(icon_path)
     if icon.isNull():
         icon = create_fallback_icon()
