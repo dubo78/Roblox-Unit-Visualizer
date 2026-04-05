@@ -42,7 +42,7 @@ class UnitBadge(QLabel):
     def __init__(self, text, parent=None):
         super().__init__(text, parent)
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.setFixedSize(54, 28) # Slightly wider for 7 columns
+        self.setFixedSize(54, 28)
         self.setStyleSheet("""
             QLabel {
                 background-color: #E0EEE0;
@@ -75,14 +75,14 @@ class PopupWindow(QWidget):
         self.container_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.main_layout.addWidget(self.container)
 
-        # --- Top Section (Dashboard Style: 7 cols x 3 rows) ---
+        # --- Top Section ---
         self.top_section = QWidget()
-        self.top_section.setFixedHeight(190) # Shorter height because only 3 rows
+        self.top_section.setFixedHeight(190)
         self.top_layout = QVBoxLayout(self.top_section)
         self.top_layout.setContentsMargins(0, 0, 0, 0)
         self.top_layout.setSpacing(0)
         
-        # 1. Header
+        # Header
         header_layout = QHBoxLayout()
         self.title_label = QLabel("Roblox Unit Visualizer")
         title_font = QFont(".AppleSystemUIFont" if platform.system() == "Darwin" else "Segoe UI Variable Display", 13, QFont.Weight.Bold)
@@ -101,21 +101,19 @@ class PopupWindow(QWidget):
         self.top_layout.addLayout(header_layout)
         self.top_layout.addSpacing(10)
 
-        # 2. Grid (7 columns x 3 rows)
+        # Grid (7x3)
         self.grid_container = QWidget()
         self.grid_layout = QGridLayout(self.grid_container)
         self.grid_layout.setContentsMargins(0, 0, 0, 0)
         self.grid_layout.setSpacing(6)
         for i, unit in enumerate(UNIT_DATA):
             badge = UnitBadge(unit[0])
-            # 7 columns layout
             self.grid_layout.addWidget(badge, i // 7, i % 7)
-            
         self.grid_container.setFixedHeight(105) 
         self.top_layout.addWidget(self.grid_container)
         self.top_layout.addSpacing(12)
 
-        # 3. Toggle Button
+        # Toggle Button
         self.toggle_btn = QPushButton("Show Detailed Table v")
         self.toggle_btn.setFixedHeight(32)
         self.toggle_btn.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -132,7 +130,6 @@ class PopupWindow(QWidget):
         """)
         self.toggle_btn.clicked.connect(self.toggle_table)
         self.top_layout.addWidget(self.toggle_btn)
-        
         self.container_layout.addWidget(self.top_section)
 
         # --- Bottom Section ---
@@ -162,8 +159,6 @@ class PopupWindow(QWidget):
 
         self.table.hide()
         self.container_layout.addWidget(self.table)
-        
-        # New Dashboard Width: 450px, Initial Height: 220px
         self.setFixedSize(450, 220)
 
     def toggle_table(self):
@@ -179,21 +174,16 @@ class PopupWindow(QWidget):
             self.setFixedSize(450, 220)
 
     def reposition(self):
+        """Uniformly place the window at the top-right of the screen for all OS."""
         screen_geo = QApplication.primaryScreen().availableGeometry()
-        tray_geo = self.tray_icon.geometry()
         popup_size = self.size()
         
-        if platform.system() == "Darwin":
-            x = screen_geo.right() - popup_size.width() - 20
-            y = screen_geo.top() + 10
-        else:
-            if tray_geo.isValid():
-                x = tray_geo.center().x() - (popup_size.width() // 2)
-                y = tray_geo.top() - popup_size.height() - 10
-            else:
-                x = screen_geo.right() - popup_size.width() - 20
-                y = screen_geo.bottom() - popup_size.height() - 20
+        # Consistent Top-Right positioning for both Windows and macOS
+        # 20px margin from right, 10px margin from top
+        x = screen_geo.right() - popup_size.width() - 20
+        y = screen_geo.top() + 10
         
+        # Safety bounds check
         x = max(screen_geo.left() + 5, min(x, screen_geo.right() - popup_size.width() - 5))
         y = max(screen_geo.top() + 5, min(y, screen_geo.bottom() - popup_size.height() - 5))
         self.move(x, y)
@@ -221,22 +211,16 @@ class TrayApp(QSystemTrayIcon):
                 self.popup.activateWindow()
 
 def create_fallback_icon():
-    """Creates a much larger and clearer 'U' icon for the tray/menubar."""
     pixmap = QPixmap(64, 64)
     pixmap.fill(Qt.GlobalColor.transparent)
     painter = QPainter(pixmap)
     painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-    
-    # Fill the circle more (smaller margin = 2px instead of 4px)
     painter.setBrush(QColor("#2F4F4F"))
     painter.setPen(Qt.PenStyle.NoPen)
     painter.drawEllipse(2, 2, 60, 60)
-    
-    # Larger, bolder font
     font = QFont("Arial", 40, QFont.Weight.Black)
     painter.setFont(font)
     painter.setPen(QColor("white"))
-    # Adjust Y offset for better centering of 'U'
     painter.drawText(pixmap.rect().adjusted(0, 0, 0, -2), Qt.AlignmentFlag.AlignCenter, "U")
     painter.end()
     return QIcon(pixmap)
