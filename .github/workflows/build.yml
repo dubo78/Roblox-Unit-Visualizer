@@ -1,10 +1,14 @@
-name: Build Roblox Unit Visualizer
+name: Build & Release Roblox Unit Visualizer
 
 on:
   push:
     branches: [ "main" ]
+    tags: [ "v*" ] # 태그 푸시 시 릴리스 생성
   pull_request:
     branches: [ "main" ]
+
+permissions:
+  contents: write # 릴리스 작성을 위해 필요
 
 jobs:
   build:
@@ -31,20 +35,44 @@ jobs:
       if: matrix.os == 'macos-latest'
       run: |
         pyinstaller --noconsole --onefile --windowed --name "RobloxUnitVisualizer" main.py
-        # Use plutil to set LSUIElement to 1 (hides Dock icon)
-        # We target the built .app bundle
         plutil -replace LSUIElement -string 1 dist/RobloxUnitVisualizer.app/Contents/Info.plist
+        # .app 번들을 압축하여 업로드용 zip 파일 생성
+        cd dist && zip -r RobloxUnitVisualizer-macOS.zip RobloxUnitVisualizer.app
 
     - name: Build with PyInstaller (Windows)
       if: matrix.os == 'windows-latest'
       run: |
         pyinstaller --noconsole --onefile --name "RobloxUnitVisualizer" main.py
+        mv dist/RobloxUnitVisualizer.exe dist/RobloxUnitVisualizer-Windows.exe
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: RobloxUnitVisualizer-${{ matrix.os }}
+        name: Artifacts-${{ matrix.os }}
         path: |
+          dist/*.zip
           dist/*.exe
-          dist/*.app
-          dist/RobloxUnitVisualizer
+
+  release:
+    name: Create GitHub Release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v') # v로 시작하는 태그 푸시 때만 실행
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/*.zip
+            artifacts/*.exe
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
