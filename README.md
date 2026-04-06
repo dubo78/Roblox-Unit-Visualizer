@@ -29,6 +29,25 @@ Get the latest version for your operating system:
 
 ---
 
+## 🛠 Troubleshooting: "App is damaged" Error
+
+If you see a message saying **"Roblox Unit Visualizer is damaged and can't be opened"** on macOS, it is because the app is unsigned. You can easily fix this by following these steps:
+
+1. Open **Terminal**.
+2. Type the following command (make sure to include a **space** at the end):
+   ```bash
+   xattr -d com.apple.quarantine 
+   ```
+3. **Drag and drop** the `RobloxUnitVisualizer.app` file from your Finder directly into the Terminal window. This will automatically paste the correct file path.
+4. Press **Enter**.
+5. Now you can open the app normally!
+
+### 💡 Note on the command:
+- **What it does**: This command removes the "quarantine" flag that macOS automatically attaches to files downloaded from the internet for security reasons.
+- **Moving the app**: Once you've run this command, you can move the app to any folder (like the `/Applications` folder) without having to run it again. The fix is permanent for that specific file.
+
+---
+
 ## 🛠 Installation (Source Code)
 
 If you prefer to run from source (Python 3.12+ required):
